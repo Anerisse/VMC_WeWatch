@@ -1,11 +1,158 @@
 package com.example.wmc_wewatch
 
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.wmc_wewatch.data.Movie
 
-import androidx.compose.runtime.Composable
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreen(
+    // Данные передаются из контроллера (Activity)
+    movies: List<Movie>,
+    selectedMovieIds: Set<Int>,
 
-
+    // События передаются в контроллер
+    onMovieSelected: (Int, Boolean) -> Unit,
+    onDeleteSelected: () -> Unit,
+    onAddMovie: () -> Unit
+) {
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddMovie) {
+                Icon(Icons.Default.Add, contentDescription = "Добавить фильм")
+            }
+        },
+        topBar = {
+            TopAppBar(
+                title = { Text("Мои фильмы") },
+                actions = {
+                    // Кнопка удаления появляется только если есть выбранные фильмы
+                    if (selectedMovieIds.isNotEmpty()) {
+                        IconButton(onClick = onDeleteSelected) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Удалить выбранные"
+                            )
+                        }
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        if (movies.isEmpty()) {
+            // Пустой экран (рис.1a)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "🎬",
+                        fontSize = 80.sp
+                    )
+                    Text(
+                        text = "Нет выбранных фильмов",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Text(
+                        text = "Нажмите + чтобы добавить фильм",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        } else {
+            // Список фильмов (рис.1b)
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(movies) { movie ->
+                    MovieListItem(
+                        movie = movie,
+                        isSelected = movie.id in selectedMovieIds,
+                        onSelectionChange = { isChecked ->
+                            onMovieSelected(movie.id, isChecked)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
-fun MainScreen() {
+fun MovieListItem(
+    movie: Movie,
+    isSelected: Boolean,
+    onSelectionChange: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Флажок для выбора фильма на удаление
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = onSelectionChange,
+                modifier = Modifier.padding(end = 8.dp)
+            )
 
+            // Иконка постера (пока заглушка)
+            Text(
+                text = "🎬",
+                fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+
+            // Информация о фильме
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = movie.title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = movie.year,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            // Индикатор ID для отладки
+            Text(
+                text = "#${movie.id}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+    }
 }

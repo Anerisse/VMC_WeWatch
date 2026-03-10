@@ -3,20 +3,85 @@ package com.example.wmc_wewatch
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
+import com.example.wmc_wewatch.data.Movie
+import com.example.wmc_wewatch.data.MovieDatabase
+import com.example.wmc_wewatch.data.MovieRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
+
+    // Model
+    private lateinit var repository: MovieRepository
+
+    // Состояние для UI
+    private val movies = mutableStateOf<List<Movie>>(emptyList())
+    private val selectedMovieIds = mutableStateOf<Set<Int>>(emptySet())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContent {
-            // Здесь просто показываем текст, чтобы проверить что работает
-            Text("Hello World!")
+        // Инициализация БД и репозитория
+        val database = MovieDatabase.getInstance(this)
+        repository = MovieRepository(database.movieDao())
 
-            // ПОТОМ заменим на:
-            // MainScreen()
+        // Загружаем фильмы из БД
+        loadMovies()
+
+        setContent {
+            MaterialTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainScreen(
+                        movies = movies.value,
+                        selectedMovieIds = selectedMovieIds.value,
+                        onMovieSelected = { movieId, isSelected ->
+                            toggleMovieSelection(movieId, isSelected)
+                        },
+                        onDeleteSelected = { deleteSelectedMovies() },
+                        onAddMovie = { /* пока пусто */ }
+                    )
+                }
+            }
         }
     }
 
+    private fun loadMovies() {
+        lifecycleScope.launch(Dispatchers.IO) {
 
+            repository.getAllMovies.collect { movieList ->
+                withContext(Dispatchers.Main) {
+                    movies.value = movieList
+                }
+            }
+        }
+    }
+
+    private fun toggleMovieSelection(movieId: Int, isSelected: Boolean) {
+        selectedMovieIds.value = if (isSelected) {
+            selectedMovieIds.value + movieId
+        } else {
+            selectedMovieIds.value - movieId
+        }
+    }
+
+    private fun deleteSelectedMovies() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            repository.deleteSelectedMovies()
+            withContext(Dispatchers.Main) {
+                selectedMovieIds.value = emptySet()
+                // Список обновится автоматически через Flow в loadMovies
+            }
+        }
+    }
 }
