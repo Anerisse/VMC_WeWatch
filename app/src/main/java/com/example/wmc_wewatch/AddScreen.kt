@@ -10,17 +10,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.wmc_wewatch.api.MovieSearchResult
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddScreen(
-    onNavigateBack: () -> Unit,      // для кнопки "назад"
-    onSearchClick: (String, String) -> Unit,       // когда нажимают на поиск
-    onAddMovieClick: () -> Unit      // когда добавляют фильм
+    onNavigateBack: () -> Unit,
+    onSearchClick: (String, String) -> Unit,
+    onAddMovieClick: (MovieSearchResult) -> Unit,  // теперь передаем фильм
+    selectedMovie: MovieSearchResult? = null       // опциональный параметр
 ) {
-    // Состояние для полей ввода
     var searchQuery by remember { mutableStateOf("") }
     var year by remember { mutableStateOf("") }
+
+    // Если есть выбранный фильм - заполняем поля
+    LaunchedEffect(selectedMovie) {
+        if (selectedMovie != null) {
+            searchQuery = selectedMovie.Title
+            year = selectedMovie.Year
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -42,7 +53,6 @@ fun AddScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Поле для поиска (обязательное)
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -51,16 +61,16 @@ fun AddScreen(
                 trailingIcon = {
                     IconButton(
                         onClick = {
-                            if(searchQuery.isNotBlank()){
-                                onSearchClick(searchQuery,year)
+                            if (searchQuery.isNotBlank()) {
+                                onSearchClick(searchQuery, year)
                             }
-                        }) {
+                        }
+                    ) {
                         Icon(Icons.Default.Search, contentDescription = "Поиск")
                     }
                 }
             )
 
-            // Поле для года (необязательное)
             OutlinedTextField(
                 value = year,
                 onValueChange = { year = it },
@@ -68,11 +78,34 @@ fun AddScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Кнопка добавления
+            // Показываем постер если есть выбранный фильм
+            selectedMovie?.let { movie ->
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "🎬",
+                            fontSize = 40.sp,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Column {
+                            Text("${movie.Title} (${movie.Year})")
+                            Text("Жанр: ${movie.Genre}", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+
             Button(
-                onClick = onAddMovieClick,
+                onClick = {
+                    selectedMovie?.let { onAddMovieClick(it) }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = searchQuery.isNotBlank() // активна только если есть название
+                enabled = selectedMovie != null
             ) {
                 Text("Добавить фильм")
             }

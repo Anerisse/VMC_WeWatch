@@ -1,7 +1,5 @@
 package com.example.wmc_wewatch
 
-
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,26 +10,48 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
-// Временная модель для результатов поиска
-data class SearchResult(
-    val id: String,           // imdbID
-    val title: String,        // Title
-    val year: String,         // Year
-    val posterUrl: String,    // Poster
-    val genre: String         // Genre (для этого экрана)
-)
+import androidx.compose.ui.unit.sp
+import com.example.wmc_wewatch.api.MovieSearchResult
+import com.example.wmc_wewatch.api.RetrofitInstance
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    query: String,                    // Поисковый запрос
-    onNavigateBack: () -> Unit,       // Назад
-    onMovieSelected: (SearchResult) -> Unit  // Когда выбрали фильм
+    query: String,
+    onNavigateBack: () -> Unit,
+    onMovieSelected: (MovieSearchResult) -> Unit
 ) {
-    // Тестовые данные (пока без API)
-    val searchResults = remember(query) {
-        generateTestResults(query)
+    var searchResults by remember { mutableStateOf<List<MovieSearchResult>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Загружаем результаты при появлении экрана
+    LaunchedEffect(query) {
+        if (query.isNotBlank()) {
+            isLoading = true
+            errorMessage = null
+            try {
+                println("🔍 Поиск: $query")  // Лог запроса
+                val response = RetrofitInstance.api.searchMovies(query)
+                println("📦 Ответ: $response")  // Лог ответа
+
+                if (response.Response == "True") {
+                    searchResults = response.Search ?: emptyList()
+                    println("✅ Найдено: ${searchResults.size} фильмов")
+                } else {
+                    errorMessage = response.Error ?: "Ничего не найдено"
+                    println("❌ Ошибка API: $errorMessage")
+                    searchResults = emptyList()
+                }
+            } catch (e: Exception) {
+                println("💥 Исключение: ${e.message}")
+                e.printStackTrace()  // Подробная ошибка
+                errorMessage = "Ошибка загрузки: ${e.message}"
+                searchResults = emptyList()
+            } finally {
+                isLoading = false
+            }
+        }
     }
 
     Scaffold(
@@ -46,8 +66,25 @@ fun SearchScreen(
             )
         }
     ) { paddingValues ->
-        if (searchResults.isEmpty()) {
-            // Пустой результат
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (errorMessage != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Ошибка: $errorMessage")
+            }
+        } else if (searchResults.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -57,7 +94,6 @@ fun SearchScreen(
                 Text("Ничего не найдено")
             }
         } else {
-            // Список результатов
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -78,12 +114,12 @@ fun SearchScreen(
 
 @Composable
 fun SearchResultItem(
-    result: SearchResult,
+    result: MovieSearchResult,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onClick  // Щелчок по карточке выбирает фильм
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier
@@ -91,61 +127,31 @@ fun SearchResultItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Постер (заглушка)
+            // Постер (пока заглушка)
             Text(
                 text = "🎬",
-                fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                fontSize = 24.sp,
                 modifier = Modifier.padding(end = 8.dp)
             )
 
-            // Информация о фильме
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = result.title,
+                    text = result.Title,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "📅 ${result.year}",
+                    text = "📅 ${result.Year}",
                     style = MaterialTheme.typography.bodyMedium
                 )
-                // Жанр - только на SearchScreen!
+                // Жанр из API!
                 Text(
-                    text = "🎭 ${result.genre}",
+                    text = "🎭 ${result.Genre}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
         }
     }
-}
-
-// Временная функция для генерации тестовых данных
-private fun generateTestResults(query: String): List<SearchResult> {
-    if (query.isBlank()) return emptyList()
-
-    return listOf(
-        SearchResult(
-            id = "tt0137523",
-            title = "Fight Club",
-            year = "1999",
-            posterUrl = "",
-            genre = "Drama"
-        ),
-        SearchResult(
-            id = "tt0111161",
-            title = "The Shawshank Redemption",
-            year = "1994",
-            posterUrl = "",
-            genre = "Drama"
-        ),
-        SearchResult(
-            id = "tt1375666",
-            title = "Inception",
-            year = "2010",
-            posterUrl = "",
-            genre = "Action, Sci-Fi"
-        )
-    ).filter { it.title.contains(query, ignoreCase = true) }
 }

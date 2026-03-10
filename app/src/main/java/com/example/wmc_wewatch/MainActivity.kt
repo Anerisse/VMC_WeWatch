@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import com.example.wmc_wewatch.api.MovieSearchResult
 import com.example.wmc_wewatch.data.Movie
 import com.example.wmc_wewatch.data.MovieDatabase
 import com.example.wmc_wewatch.data.MovieRepository
@@ -16,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
 
 class MainActivity : ComponentActivity() {
 
@@ -28,8 +30,7 @@ class MainActivity : ComponentActivity() {
 
     // Данные для передачи между экранами
     private val searchQuery = mutableStateOf("")
-    private val searchYear = mutableStateOf("")
-    private val selectedMovie = mutableStateOf<SearchResult?>(null)
+    private val selectedMovie = mutableStateOf<MovieSearchResult?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,16 +60,31 @@ class MainActivity : ComponentActivity() {
                         }
                         Screen.Add -> {
                             AddScreen(
-                                onNavigateBack = { currentScreen.value = Screen.Main },
+                                onNavigateBack = {
+                                    selectedMovie.value = null
+                                    currentScreen.value = Screen.Main },
                                 onSearchClick = { query, year ->
                                     searchQuery.value = query
-                                    searchYear.value = year
                                     currentScreen.value = Screen.Search
                                 },
-                                onAddMovieClick = {
-                                    // TODO: добавить выбранный фильм в БД
-                                    currentScreen.value = Screen.Main
-                                }
+                                onAddMovieClick = { movie ->
+                                    // Конвертируем SearchResult в Movie и сохраняем
+                                    lifecycleScope.launch(Dispatchers.IO) {  // ✅ lifecycleScope
+                                        val newMovie = Movie(
+                                            title = movie.Title,
+                                            year = movie.Year,
+                                            posterUrl = movie.Poster,
+                                            genre = movie.Genre,
+                                            isSelected = false
+                                        )
+                                        repository.insertMovie(newMovie)
+                                        withContext(Dispatchers.Main) {
+                                            selectedMovie.value = null
+                                            currentScreen.value = Screen.Main
+                                        }
+                                    }
+                                },
+                                selectedMovie = selectedMovie.value
                             )
                         }
                         Screen.Search -> {
