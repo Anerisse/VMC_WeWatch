@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AddScreen(
     onNavigateBack: () -> Unit,      // для кнопки "назад"
-    onSearchClick: () -> Unit,       // когда нажимают на поиск
+    onSearchClick: (String, String) -> Unit,       // когда нажимают на поиск
     onAddMovieClick: () -> Unit      // когда добавляют фильм
 ) {
     // Состояние для полей ввода
@@ -49,7 +49,12 @@ fun AddScreen(
                 label = { Text("Название фильма") },
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
-                    IconButton(onClick = onSearchClick) {
+                    IconButton(
+                        onClick = {
+                            if(searchQuery.isNotBlank()){
+                                onSearchClick(searchQuery,year)
+                            }
+                        }) {
                         Icon(Icons.Default.Search, contentDescription = "Поиск")
                     }
                 }

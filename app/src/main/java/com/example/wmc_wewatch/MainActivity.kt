@@ -19,24 +19,24 @@ import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
 
-    // Model
     private lateinit var repository: MovieRepository
-
-    // Состояние для UI
     private val movies = mutableStateOf<List<Movie>>(emptyList())
     private val selectedMovieIds = mutableStateOf<Set<Int>>(emptySet())
 
-    // Состояние для навигации
-    private val showAddScreen = mutableStateOf(false)
+    // Состояние навигации
+    private val currentScreen = mutableStateOf<Screen>(Screen.Main)
+
+    // Данные для передачи между экранами
+    private val searchQuery = mutableStateOf("")
+    private val searchYear = mutableStateOf("")
+    private val selectedMovie = mutableStateOf<SearchResult?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Инициализация БД и репозитория
         val database = MovieDatabase.getInstance(this)
         repository = MovieRepository(database.movieDao())
 
-        // Загружаем фильмы из БД
         loadMovies()
 
         setContent {
@@ -45,30 +45,44 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    if (showAddScreen.value) {
-                        // Показываем экран добавления
-                        AddScreen(
-                            onNavigateBack = { showAddScreen.value = false },
-                            onSearchClick = {
-                                // Позже здесь будет открытие SearchScreen
-                                println("Ищем: $")
-                            },
-                            onAddMovieClick = {
-                                // Позже здесь будет добавление фильма
-                                println("Добавляем фильм")
-                                showAddScreen.value = false
-                            }
-                        )
-                    } else {
-                        MainScreen(
-                            movies = movies.value,
-                            selectedMovieIds = selectedMovieIds.value,
-                            onMovieSelected = { movieId, isSelected ->
-                                toggleMovieSelection(movieId, isSelected)
-                            },
-                            onDeleteSelected = { deleteSelectedMovies() },
-                            onAddMovie = { showAddScreen.value = true }
-                        )
+                    when (currentScreen.value) {
+                        Screen.Main -> {
+                            MainScreen(
+                                movies = movies.value,
+                                selectedMovieIds = selectedMovieIds.value,
+                                onMovieSelected = { movieId, isSelected ->
+                                    toggleMovieSelection(movieId, isSelected)
+                                },
+                                onDeleteSelected = { deleteSelectedMovies() },
+                                onAddMovie = { currentScreen.value = Screen.Add }
+                            )
+                        }
+                        Screen.Add -> {
+                            AddScreen(
+                                onNavigateBack = { currentScreen.value = Screen.Main },
+                                onSearchClick = { query, year ->
+                                    searchQuery.value = query
+                                    searchYear.value = year
+                                    currentScreen.value = Screen.Search
+                                },
+                                onAddMovieClick = {
+                                    // TODO: добавить выбранный фильм в БД
+                                    currentScreen.value = Screen.Main
+                                }
+                            )
+                        }
+                        Screen.Search -> {
+                            SearchScreen(
+                                query = searchQuery.value,
+                                onNavigateBack = { currentScreen.value = Screen.Add },
+                                onMovieSelected = { result ->
+                                    selectedMovie.value = result
+                                    // Возвращаемся на AddScreen с выбранным фильмом
+                                    currentScreen.value = Screen.Add
+                                    // TODO: заполнить поля на AddScreen данными result
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -77,7 +91,6 @@ class MainActivity : ComponentActivity() {
 
     private fun loadMovies() {
         lifecycleScope.launch(Dispatchers.IO) {
-
             repository.getAllMovies.collect { movieList ->
                 withContext(Dispatchers.Main) {
                     movies.value = movieList
@@ -99,8 +112,12 @@ class MainActivity : ComponentActivity() {
             repository.deleteSelectedMovies()
             withContext(Dispatchers.Main) {
                 selectedMovieIds.value = emptySet()
-                // Список обновится автоматически через Flow в loadMovies
             }
         }
     }
+}
+
+// Состояния экранов
+enum class Screen {
+    Main, Add, Search
 }
