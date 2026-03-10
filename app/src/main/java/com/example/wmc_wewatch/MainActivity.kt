@@ -26,6 +26,9 @@ class MainActivity : ComponentActivity() {
     private val movies = mutableStateOf<List<Movie>>(emptyList())
     private val selectedMovieIds = mutableStateOf<Set<Int>>(emptySet())
 
+    // Состояние для навигации
+    private val showAddScreen = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -42,15 +45,31 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen(
-                        movies = movies.value,
-                        selectedMovieIds = selectedMovieIds.value,
-                        onMovieSelected = { movieId, isSelected ->
-                            toggleMovieSelection(movieId, isSelected)
-                        },
-                        onDeleteSelected = { deleteSelectedMovies() },
-                        onAddMovie = { /* пока пусто */ }
-                    )
+                    if (showAddScreen.value) {
+                        // Показываем экран добавления
+                        AddScreen(
+                            onNavigateBack = { showAddScreen.value = false },
+                            onSearchClick = {
+                                // Позже здесь будет открытие SearchScreen
+                                println("Ищем: $")
+                            },
+                            onAddMovieClick = {
+                                // Позже здесь будет добавление фильма
+                                println("Добавляем фильм")
+                                showAddScreen.value = false
+                            }
+                        )
+                    } else {
+                        MainScreen(
+                            movies = movies.value,
+                            selectedMovieIds = selectedMovieIds.value,
+                            onMovieSelected = { movieId, isSelected ->
+                                toggleMovieSelection(movieId, isSelected)
+                            },
+                            onDeleteSelected = { deleteSelectedMovies() },
+                            onAddMovie = { showAddScreen.value = true }
+                        )
+                    }
                 }
             }
         }
