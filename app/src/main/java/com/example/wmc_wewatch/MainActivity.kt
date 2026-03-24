@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.example.wmc_wewatch.api.MovieSearchResult
@@ -14,13 +13,11 @@ import com.example.wmc_wewatch.data.Movie
 import com.example.wmc_wewatch.data.MovieDatabase
 import com.example.wmc_wewatch.data.MovieRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.activity.compose.BackHandler
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
@@ -30,8 +27,10 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.view.WindowCompat
 import androidx.compose.material3.Typography
+import com.example.wmc_wewatch.ui.add.AddScreen
+import com.example.wmc_wewatch.ui.main.MainScreen
+import com.example.wmc_wewatch.ui.search.SearchScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -136,7 +135,7 @@ class MainActivity : ComponentActivity() {
                                             posterUrl = movie.Poster,
                                             type = movie.Type,
 
-                                        )
+                                            )
                                         repository.insertMovie(newMovie)
                                         withContext(Dispatchers.Main) {
                                             selectedMovie.value = null

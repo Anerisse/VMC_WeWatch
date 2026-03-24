@@ -1,5 +1,6 @@
-package com.example.wmc_wewatch
+package com.example.wmc_wewatch.ui.search
 
+import android.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.wmc_wewatch.api.MovieSearchResult
 import com.example.wmc_wewatch.api.RetrofitInstance
@@ -136,7 +136,7 @@ fun SearchResultItem(
                 modifier = Modifier
                     .size(60.dp)
                     .padding(end = 8.dp),
-                error = painterResource(android.R.drawable.ic_menu_gallery)  // встроенная иконка
+                error = painterResource(R.drawable.ic_menu_gallery)  // встроенная иконка
             )
 
             Column(
