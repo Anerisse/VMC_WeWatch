@@ -19,6 +19,7 @@ import com.example.wmc_wewatch.api.RetrofitInstance
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
+    modifier: Modifier = Modifier,
     query: String,
     onNavigateBack: () -> Unit,
     onMovieSelected: (MovieSearchResult) -> Unit
@@ -56,23 +57,24 @@ fun SearchScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Результаты поиска: \"$query\"") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
-                    }
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        // TopAppBar теперь здесь
+        TopAppBar(
+            title = { Text("Результаты поиска: \"$query\"") },
+            navigationIcon = {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
                 }
-            )
-        }
-    ) { paddingValues ->
+            }
+        )
+
         if (isLoading) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
+
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
@@ -80,8 +82,8 @@ fun SearchScreen(
         } else if (errorMessage != null) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
+
                 contentAlignment = Alignment.Center
             ) {
                 Text("Ошибка: $errorMessage")
@@ -89,8 +91,7 @@ fun SearchScreen(
         } else if (searchResults.isEmpty()) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text("Ничего не найдено")
@@ -98,8 +99,7 @@ fun SearchScreen(
         } else {
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
                 contentPadding = PaddingValues(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {

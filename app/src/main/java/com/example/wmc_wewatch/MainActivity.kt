@@ -18,6 +18,21 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.activity.compose.BackHandler
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.WindowCompat
+import androidx.compose.material3.Typography
+
 
 class MainActivity : ComponentActivity() {
 
@@ -34,6 +49,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         val database = MovieDatabase.getInstance(this)
         repository = MovieRepository(database.movieDao())
@@ -41,23 +57,58 @@ class MainActivity : ComponentActivity() {
         loadMovies()
 
         setContent {
-            MaterialTheme {
-
-                BackHandler {
-                    when (currentScreen.value) {
-                        Screen.Main -> finish()
-                        Screen.Add -> currentScreen.value = Screen.Main
-                        Screen.Search -> currentScreen.value = Screen.Add
-                    }
+            val context = LocalContext.current
+            val colorScheme = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                // Для Android 12+ используем динамические цвета от системы
+                val isDarkTheme = isSystemInDarkTheme()
+                if (isDarkTheme) {
+                    dynamicDarkColorScheme(context)
+                } else {
+                    dynamicLightColorScheme(context)
                 }
+            } else {
+                // Для старых версий Android используем стандартную тему Material 3
+                val isDarkTheme = isSystemInDarkTheme()
+                if (isDarkTheme) {
+                    androidx.compose.material3.darkColorScheme()
+                } else {
+                    androidx.compose.material3.lightColorScheme()
+                }
+            }
+            MaterialTheme(
+                colorScheme = colorScheme,
+                typography = Typography(),
+                shapes = Shapes()
+            ) {
 
-                Surface(
+                Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+                    floatingActionButton = {
+                        // FAB показываем только на главном экране
+                        if (currentScreen.value == Screen.Main) {
+                            FloatingActionButton(
+                                onClick = { currentScreen.value = Screen.Add }
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Добавить фильм")
+                            }
+                        }
+                    }
+                ) { innerPadding ->
+
+
+                    BackHandler {
+                        when (currentScreen.value) {
+                            Screen.Main -> finish()
+                            Screen.Add -> currentScreen.value = Screen.Main
+                            Screen.Search -> currentScreen.value = Screen.Add
+                        }
+                    }
+
+                    // Применяем отступы к контенту
                     when (currentScreen.value) {
                         Screen.Main -> {
                             MainScreen(
+
                                 movies = movies.value,
                                 selectedMovieIds = selectedMovieIds.value,
                                 onMovieSelected = { movieId, isSelected ->

@@ -18,6 +18,7 @@ import com.example.wmc_wewatch.api.MovieSearchResult
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddScreen(
+    modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit,
     onSearchClick: (String, String) -> Unit,
     onAddMovieClick: (MovieSearchResult) -> Unit,
@@ -34,22 +35,20 @@ fun AddScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Добавить фильм") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
-                    }
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        TopAppBar(
+            title = { Text("Добавить фильм") },
+            navigationIcon = {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                 }
-            )
-        }
-    ) { paddingValues ->
+            }
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)

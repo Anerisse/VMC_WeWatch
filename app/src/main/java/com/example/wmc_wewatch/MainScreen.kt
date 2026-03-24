@@ -18,6 +18,7 @@ import com.example.wmc_wewatch.data.Movie
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
+    modifier: Modifier = Modifier,
     // Данные передаются из контроллера (Activity)
     movies: List<Movie>,
     selectedMovieIds: Set<Int>,
@@ -27,35 +28,29 @@ fun MainScreen(
     onDeleteSelected: () -> Unit,
     onAddMovie: () -> Unit
 ) {
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = onAddMovie) {
-                Icon(Icons.Default.Add, contentDescription = "Добавить фильм")
-            }
-        },
-        topBar = {
-            TopAppBar(
-                title = { Text("Мои фильмы") },
-                actions = {
-                    // Кнопка удаления появляется только если есть выбранные фильмы
-                    if (selectedMovieIds.isNotEmpty()) {
-                        IconButton(onClick = onDeleteSelected) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Удалить выбранные"
-                            )
-                        }
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        // Верхняя панель (TopAppBar)
+        TopAppBar(
+            title = { Text("Мои фильмы") },
+            actions = {
+                if (selectedMovieIds.isNotEmpty()) {
+                    IconButton(onClick = onDeleteSelected) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Удалить выбранные"
+                        )
                     }
                 }
-            )
-        }
-    ) { paddingValues ->
+            }
+        )
         if (movies.isEmpty()) {
             // Пустой экран (рис.1a)
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
+
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -80,8 +75,7 @@ fun MainScreen(
             // Список фильмов (рис.1b)
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
                 contentPadding = PaddingValues(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
