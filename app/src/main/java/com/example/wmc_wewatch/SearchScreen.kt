@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.wmc_wewatch.api.MovieSearchResult
 import com.example.wmc_wewatch.api.RetrofitInstance
 
@@ -127,11 +129,14 @@ fun SearchResultItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Постер (пока заглушка)
-            Text(
-                text = "🎬",
-                fontSize = 24.sp,
-                modifier = Modifier.padding(end = 8.dp)
+            // Постер через Coil (очень просто!)
+            AsyncImage(
+                model = result.Poster,
+                contentDescription = "Постер ${result.Title}",
+                modifier = Modifier
+                    .size(60.dp)
+                    .padding(end = 8.dp),
+                error = painterResource(android.R.drawable.ic_menu_gallery)  // встроенная иконка
             )
 
             Column(
@@ -145,9 +150,8 @@ fun SearchResultItem(
                     text = "📅 ${result.Year}",
                     style = MaterialTheme.typography.bodyMedium
                 )
-                // Жанр из API!
                 Text(
-                    text = "🎭 ${result.Genre}",
+                    text = "🎭 ${result.Type}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )

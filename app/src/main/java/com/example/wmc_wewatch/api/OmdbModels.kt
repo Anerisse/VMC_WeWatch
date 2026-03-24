@@ -10,7 +10,7 @@ data class MovieSearchResponse(
 data class MovieSearchResult(
     val Title: String,
     val Year: String,
-    val Genre: String,
+    val Type: String,
     val imdbID: String,
     val Poster: String?  // Сюда будет записан URL постера
 )

@@ -25,6 +25,6 @@ interface MovieDao {
     @Delete
     suspend fun deleteMovie(movie: Movie)
 
-    @Query("DELETE FROM movies WHERE isSelected = 1")
-    suspend fun deleteSelectedMovies()
+    @Query("DELETE FROM movies WHERE id IN (:ids)")
+    suspend fun deleteMoviesByIds(ids: List<Int>)
 }

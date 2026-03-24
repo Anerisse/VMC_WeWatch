@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.wmc_wewatch.data.Movie
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -119,19 +120,23 @@ fun MovieListItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Флажок для выбора фильма на удаление
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = onSelectionChange,
-                modifier = Modifier.padding(end = 8.dp)
-            )
 
-            // Иконка постера (пока заглушка)
-            Text(
-                text = "🎬",
-                fontSize = MaterialTheme.typography.titleLarge.fontSize,
-                modifier = Modifier.padding(end = 8.dp)
-            )
+            // Постер из БД (как в AddScreen)
+            if (!movie.posterUrl.isNullOrEmpty() && movie.posterUrl != "N/A") {
+                AsyncImage(
+                    model = movie.posterUrl,
+                    contentDescription = "Постер ${movie.title}",
+                    modifier = Modifier
+                        .size(60.dp)
+                        .padding(end = 8.dp)
+                )
+            } else {
+                Text(
+                    text = "🎬",
+                    fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+            }
 
             // Информация о фильме
             Column(
@@ -147,11 +152,11 @@ fun MovieListItem(
                 )
             }
 
-            // Индикатор ID для отладки
-            Text(
-                text = "#${movie.id}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline
+            // Флажок для выбора фильма на удаление
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = onSelectionChange,
+                modifier = Modifier.padding(end = 8.dp)
             )
         }
     }

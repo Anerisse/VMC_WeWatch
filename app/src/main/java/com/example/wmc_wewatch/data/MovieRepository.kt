@@ -18,12 +18,13 @@ class MovieRepository(private val movieDao: MovieDao) {
         movieDao.deleteMovie(movie)
     }
 
-    // Удалить выбранные фильмы
-    suspend fun deleteSelectedMovies() {
-        movieDao.deleteSelectedMovies()
-    }
 
     suspend fun updateMovie(movie: Movie) {
         movieDao.updateMovie(movie)
+    }
+
+
+    suspend fun deleteMoviesByIds(ids: List<Int>) {
+        movieDao.deleteMoviesByIds(ids)
     }
 }
