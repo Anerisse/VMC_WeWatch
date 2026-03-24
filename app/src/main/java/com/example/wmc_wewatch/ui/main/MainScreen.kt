@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,28 +28,34 @@ fun MainScreen(
     onDeleteSelected: () -> Unit,
     onAddMovie: () -> Unit
 ) {
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        // Верхняя панель (TopAppBar)
-        TopAppBar(
-            title = { Text("Мои фильмы") },
-            actions = {
-                if (selectedMovieIds.isNotEmpty()) {
-                    IconButton(onClick = onDeleteSelected) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Удалить выбранные"
-                        )
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddMovie) {
+                Icon(Icons.Default.Add, contentDescription = "Добавить фильм")
+            }
+        },
+        topBar = {
+            TopAppBar(
+                title = { Text("Мои фильмы") },
+                actions = {
+                    if (selectedMovieIds.isNotEmpty()) {
+                        IconButton(onClick = onDeleteSelected) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Удалить выбранные"
+                            )
+                        }
                     }
                 }
-            }
-        )
+            )
+        }
+    ) { paddingValues ->
         if (movies.isEmpty()) {
             // Пустой экран (рис.1a)
             Box(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .padding(paddingValues),
 
                 contentAlignment = Alignment.Center
             ) {
@@ -74,7 +81,8 @@ fun MainScreen(
             // Список фильмов (рис.1b)
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .padding(paddingValues),
                 contentPadding = PaddingValues(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {

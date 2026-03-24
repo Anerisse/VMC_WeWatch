@@ -10,6 +10,6 @@ data class Movie(
     val title: String,       // Название фильма
     val year: String,        // Год выпуска
     val posterUrl: String?,  // Ссылка на постер (может быть null)
-    val type: String? = null,
+    val type: String? = null
 
 )

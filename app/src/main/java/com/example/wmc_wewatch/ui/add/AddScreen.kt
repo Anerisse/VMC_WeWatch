@@ -34,20 +34,22 @@ fun AddScreen(
         }
     }
 
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        TopAppBar(
-            title = { Text("Добавить фильм") },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Добавить фильм") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
                 }
-            }
-        )
+            )
+        }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)

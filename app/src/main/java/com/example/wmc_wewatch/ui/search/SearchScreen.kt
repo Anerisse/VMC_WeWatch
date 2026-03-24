@@ -57,24 +57,23 @@ fun SearchScreen(
         }
     }
 
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        // TopAppBar теперь здесь
-        TopAppBar(
-            title = { Text("Результаты поиска: \"$query\"") },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Результаты поиска: \"$query\"") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                    }
                 }
-            }
-        )
-
+            )
+        }
+    ) { paddingValues ->
         if (isLoading) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize(),
-
+                    .fillMaxSize()
+                .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
