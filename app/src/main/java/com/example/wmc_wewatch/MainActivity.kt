@@ -58,29 +58,24 @@ class MainActivity : ComponentActivity() {
             val viewModel: MainViewModel = viewModel(factory = factory)
             val navController = rememberNavController()
 
-            // Подписываемся на StateFlow из ViewModel
-            val movies by viewModel.movies.collectAsState()
-            val selectedMovieIds by viewModel.selectedMovieIds.collectAsState()
+            val mainState by viewModel.state.collectAsState()  // ← Новое (единое состояние)
 
             MaterialTheme(colorScheme = colorScheme) {
                 AppNavHost(
                     navController = navController,
 
-                    // Данные для главного экрана
-                    movies = movies,
-                    selectedMovieIds = selectedMovieIds,
-                    toggleSelection = { id, checked ->
-                        viewModel.toggleMovieSelection(id, checked)
-                    },
-                    onDeleteMovies = {
-                        viewModel.deleteSelectedMovies()
+                    // Данные для главного экрана (теперь один объект)
+                    mainState = mainState,
+
+                    // Единый обработчик всех действий
+                    onIntent = { intent ->
+                        viewModel.handleIntent(intent)
                     },
 
                     // Добавление фильма
                     onAddMovie = { movie ->
                         println("🎬 Добавление фильма: ${movie.Title}")
 
-                        // Используем lifecycleScope из Activity для корутин
                         lifecycleScope.launch {
                             withContext(Dispatchers.IO) {
                                 val newMovie = Movie(
