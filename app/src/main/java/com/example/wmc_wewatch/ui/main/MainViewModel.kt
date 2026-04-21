@@ -4,82 +4,101 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.wmc_wewatch.data.Movie
 import com.example.wmc_wewatch.data.MovieRepository
+import com.example.wmc_wewatch.ui.main.mvi.MainIntent
+import com.example.wmc_wewatch.ui.main.mvi.MainState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MainViewModel(
     private val repository: MovieRepository
 ) : ViewModel() {
 
-    // Состояние списка фильмов
-    private val _movies = MutableStateFlow<List<Movie>>(emptyList())
-    val movies: StateFlow<List<Movie>> = _movies.asStateFlow()
-
-    // Состояние выбранных фильмов для удаления
-    private val _selectedMovieIds = MutableStateFlow<Set<Int>>(emptySet())
-    val selectedMovieIds: StateFlow<Set<Int>> = _selectedMovieIds.asStateFlow()
-
-    // Флаг загрузки
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    // ЕДИНСТВЕННОЕ состояние экрана
+    private val _state = MutableStateFlow(MainState())
+    val state: StateFlow<MainState> = _state.asStateFlow()
 
     init {
-        loadMovies()
+        // При создании ViewModel сразу загружаем фильмы
+        handleIntent(MainIntent.LoadMovies)
     }
+
+    /**
+     * ЕДИНСТВЕННЫЙ метод для обработки ВСЕХ действий пользователя
+     */
+    fun handleIntent(intent: MainIntent) {
+        when (intent) {
+            is MainIntent.LoadMovies -> loadMovies()
+            is MainIntent.ToggleSelection -> toggleSelection(intent.id, intent.isSelected)
+            is MainIntent.DeleteSelected -> deleteSelected()
+            is MainIntent.ClearError -> clearError()
+            else -> {}
+        }
+    }
+
 
     /**
      * Загружает все фильмы из БД и подписывается на изменения
      */
     private fun loadMovies() {
         viewModelScope.launch {
-            // Flow из Room автоматически будет обновлять _movies при изменении БД
-            repository.getAllMovies.collect { movieList ->
-                _movies.value = movieList
-                println("📽️ Загружено фильмов: ${movieList.size}")
+            // Показываем загрузку
+            _state.update { it.copy(isLoading = true) }
+
+            // Подписываемся на Flow из БД
+            repository.getAllMovies.collect { movies ->
+                _state.update {
+                    it.copy(
+                        movies = movies,
+                        isLoading = false
+                    )
+                }
             }
         }
     }
 
-    /**
-     * Переключает выбор фильма (выбран/не выбран)
-     */
-    fun toggleMovieSelection(movieId: Int, isSelected: Boolean) {
-        _selectedMovieIds.value = if (isSelected) {
-            _selectedMovieIds.value + movieId
-        } else {
-            _selectedMovieIds.value - movieId
+    //  ВЫБОР ФИЛЬМА
+    private fun toggleSelection(id: Int, isSelected: Boolean) {
+        _state.update { currentState ->
+            val newSelectedIds = if (isSelected) {
+                currentState.selectedIds + id
+            } else {
+                currentState.selectedIds - id
+            }
+            currentState.copy(selectedIds = newSelectedIds)
         }
     }
 
-    /**
-     * Очищает выбор после удаления или отмены
-     */
-    fun clearSelection() {
-        _selectedMovieIds.value = emptySet()
-    }
-
-    /**
-     * Удаляет выбранные фильмы из БД
-     */
-    fun deleteSelectedMovies() {
-        val idsToDelete = _selectedMovieIds.value.toList()
+    // 🗑 УДАЛЕНИЕ ВЫБРАННЫХ
+    private fun deleteSelected() {
+        val idsToDelete = _state.value.selectedIds.toList()
         if (idsToDelete.isEmpty()) return
-
-        println("🗑️ Удаление фильмов с ID: $idsToDelete")
 
         viewModelScope.launch {
             try {
-                _isLoading.value = true
+                _state.update { it.copy(isLoading = true) }
                 repository.deleteMoviesByIds(idsToDelete)
-                _selectedMovieIds.value = emptySet()
-                println("✅ Удалено из БД: $idsToDelete")
+                _state.update {
+                    it.copy(
+                        selectedIds = emptySet(),
+                        isLoading = false
+                    )
+                }
             } catch (e: Exception) {
-                println("❌ Ошибка удаления: ${e.message}")
-            } finally {
-                _isLoading.value = false
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message
+                    )
+                }
             }
         }
+    }
+
+    //  ОЧИСТКА ОШИБКИ
+    private fun clearError() {
+        _state.update { it.copy(error = null) }
     }
 }
