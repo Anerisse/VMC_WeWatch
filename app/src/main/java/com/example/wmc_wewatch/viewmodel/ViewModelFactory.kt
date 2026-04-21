@@ -18,13 +18,12 @@ class ViewModelFactory(
                 MainViewModel(repository) as T
             }
 
-            /*
+
             modelClass.isAssignableFrom(SearchViewModel::class.java) -> {
                 @Suppress("UNCHECKED_CAST")
                 SearchViewModel() as T
             }
 
-             */
 
             modelClass.isAssignableFrom(AddViewModel::class.java) -> {
                 @Suppress("UNCHECKED_CAST")

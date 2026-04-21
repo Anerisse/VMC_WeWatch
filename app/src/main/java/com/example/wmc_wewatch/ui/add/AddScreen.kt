@@ -21,7 +21,7 @@ fun AddScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit,
     onAddMovieClick: (MovieSearchResult) -> Unit,
-    onSearchRequested: (String, String) -> Unit,  // ← Добавили этот параметр
+    onSearchRequested: (String, String) -> Unit,
     viewModel: AddViewModel = viewModel()
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -60,7 +60,6 @@ fun AddScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Поле поиска
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.updateSearchQuery(it) },
@@ -70,7 +69,6 @@ fun AddScreen(
                     IconButton(
                         onClick = {
                             if (searchQuery.isNotBlank()) {
-                                // Вызываем поиск и переходим на экран результатов
                                 onSearchRequested(searchQuery, year)
                             }
                         }
@@ -81,7 +79,6 @@ fun AddScreen(
                 enabled = !isAdding
             )
 
-            // Поле года
             OutlinedTextField(
                 value = year,
                 onValueChange = { viewModel.updateYear(it) },
@@ -90,14 +87,12 @@ fun AddScreen(
                 enabled = !isAdding
             )
 
-            // Показываем выбранный фильм (если есть)
             if (searchState is AddSearchState.Idle) {
                 selectedMovie?.let { movie ->
                     SelectedMovieCard(movie = movie)
                 }
             }
 
-            // Кнопка добавления
             Button(
                 onClick = { viewModel.startAdding() },
                 modifier = Modifier.fillMaxWidth(),

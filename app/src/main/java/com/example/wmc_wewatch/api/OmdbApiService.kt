@@ -1,9 +1,5 @@
 package com.example.wmc_wewatch.api
 
-
-
-
-import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -13,6 +9,5 @@ interface OmdbApiService {
         @Query("s") query: String, // Название фильма
 
     ): MovieSearchResponse
-
 
 }

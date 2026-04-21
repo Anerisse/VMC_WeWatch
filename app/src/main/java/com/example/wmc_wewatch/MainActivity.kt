@@ -5,32 +5,26 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.compose.material3.MaterialTheme
-
-import com.example.wmc_wewatch.api.MovieSearchResult
 import com.example.wmc_wewatch.data.Movie
 import com.example.wmc_wewatch.data.MovieDatabase
 import kotlinx.coroutines.launch
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
-
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.wmc_wewatch.navigation.AppNavHost
 import com.example.wmc_wewatch.ui.main.MainViewModel
 import com.example.wmc_wewatch.viewmodel.ViewModelFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
-
-    // ViewModel будет создана через фабрику (ленивая инициализация)
-    private lateinit var viewModel: MainViewModel
-
-    private val searchQuery = mutableStateOf("")
-    private val selectedMovie = mutableStateOf<MovieSearchResult?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,8 +55,7 @@ class MainActivity : ComponentActivity() {
             }
 
             // Создаём ViewModel через фабрику
-            viewModel = viewModel(factory = factory)
-
+            val viewModel: MainViewModel = viewModel(factory = factory)
             val navController = rememberNavController()
 
             // Подписываемся на StateFlow из ViewModel
@@ -73,7 +66,7 @@ class MainActivity : ComponentActivity() {
                 AppNavHost(
                     navController = navController,
 
-                    // Данные для главного экрана (приходят из ViewModel)
+                    // Данные для главного экрана
                     movies = movies,
                     selectedMovieIds = selectedMovieIds,
                     toggleSelection = { id, checked ->
@@ -83,18 +76,13 @@ class MainActivity : ComponentActivity() {
                         viewModel.deleteSelectedMovies()
                     },
 
-                    // Данные для экрана поиска и деталей
-                    selectedMovie = selectedMovie.value,
-                    setSelectedMovie = { selectedMovie.value = it },
-
-                    searchQuery = searchQuery.value,
-                    setSearchQuery = { searchQuery.value = it },
-
-                    // Добавление фильма (TODO: перенести в AddViewModel)
+                    // Добавление фильма
                     onAddMovie = { movie ->
                         println("🎬 Добавление фильма: ${movie.Title}")
-                        kotlinx.coroutines.MainScope().launch {
-                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+
+                        // Используем lifecycleScope из Activity для корутин
+                        lifecycleScope.launch {
+                            withContext(Dispatchers.IO) {
                                 val newMovie = Movie(
                                     title = movie.Title,
                                     year = movie.Year,
@@ -103,8 +91,8 @@ class MainActivity : ComponentActivity() {
                                 )
                                 repository.insertMovie(newMovie)
                             }
-                            selectedMovie.value = null
-                            searchQuery.value = ""
+
+                            // После добавления возвращаемся на главный экран
                             navController.popBackStack("main", inclusive = false)
                         }
                     }
@@ -113,4 +101,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
