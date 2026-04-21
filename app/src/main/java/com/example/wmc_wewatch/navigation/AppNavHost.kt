@@ -35,6 +35,7 @@ fun AppNavHost(
             MainScreen(
                 movies = movies,
                 selectedMovieIds = selectedMovieIds,
+                isLoading = false,
                 onMovieSelected = toggleSelection,
                 onDeleteSelected = onDeleteMovies,
                 onAddMovie = { navController.navigate("add") }

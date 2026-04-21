@@ -26,7 +26,8 @@ fun MainScreen(
     // События передаются во ViewModel
     onMovieSelected: (Int, Boolean) -> Unit,
     onDeleteSelected: () -> Unit,
-    onAddMovie: () -> Unit
+    onAddMovie: () -> Unit,
+    isLoading: Boolean,
 ) {
     Scaffold(
         floatingActionButton = {
@@ -50,57 +51,76 @@ fun MainScreen(
             )
         }
     ) { paddingValues ->
-        if (movies.isEmpty()) {
-            // Пустой экран (рис.1a)
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                .navigationBarsPadding(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+        when {
+            isLoading -> {
+                // Крутилка загрузки
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "🎬",
-                        fontSize = 80.sp
-                    )
-                    Text(
-                        text = "Нет выбранных фильмов",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Text(
-                        text = "Нажмите + чтобы добавить фильм",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                    CircularProgressIndicator()
                 }
             }
-        } else {
-            // Список фильмов (рис.1b)
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = paddingValues.calculateTopPadding())  // отступ сверху
-                    .navigationBarsPadding(),  // отступ снизу
-                contentPadding = PaddingValues(bottom = 80.dp, top = 8.dp, start= 8.dp, end= 8.dp),  //  чтобы последний элемент не скрывался за FAB
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(movies) { movie ->
-                    MovieListItem(
-                        movie = movie,
-                        isSelected = movie.id in selectedMovieIds,
-                        onSelectionChange = { isChecked ->
-                            onMovieSelected(movie.id, isChecked)
-                        }
-                    )
+
+            movies.isEmpty() -> {
+                // Пустой экран (рис.1a)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .navigationBarsPadding(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "🎬",
+                            fontSize = 80.sp
+                        )
+                        Text(
+                            text = "Нет выбранных фильмов",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        Text(
+                            text = "Нажмите + чтобы добавить фильм",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+
+            else -> {
+                // Список фильмов (рис.1b)
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = paddingValues.calculateTopPadding())  // отступ сверху
+                        .navigationBarsPadding(),  // отступ снизу
+                    contentPadding = PaddingValues(
+                        bottom = 80.dp,
+                        top = 8.dp,
+                        start = 8.dp,
+                        end = 8.dp
+                    ),  //  чтобы последний элемент не скрывался за FAB
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(movies) { movie ->
+                        MovieListItem(
+                            movie = movie,
+                            isSelected = movie.id in selectedMovieIds,
+                            onSelectionChange = { isChecked ->
+                                onMovieSelected(movie.id, isChecked)
+                            }
+                        )
+                    }
                 }
             }
         }
+
     }
 }
-
 @Composable
 fun MovieListItem(
     movie: Movie,
@@ -163,3 +183,4 @@ fun MovieListItem(
         }
     }
 }
+
