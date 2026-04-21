@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.wmc_wewatch.api.MovieSearchResult
 
@@ -19,18 +20,23 @@ import com.example.wmc_wewatch.api.MovieSearchResult
 fun AddScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit,
-    onSearchClick: (String, String) -> Unit,
     onAddMovieClick: (MovieSearchResult) -> Unit,
-    selectedMovie: MovieSearchResult? = null
+    onSearchRequested: (String, String) -> Unit,  // ← Добавили этот параметр
+    viewModel: AddViewModel = viewModel()
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var year by remember { mutableStateOf("") }
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val year by viewModel.year.collectAsState()
+    val searchState by viewModel.searchState.collectAsState()
+    val selectedMovie by viewModel.selectedMovie.collectAsState()
+    val isAdding by viewModel.isAdding.collectAsState()
 
-    // Если есть выбранный фильм - заполняем поля
-    LaunchedEffect(selectedMovie) {
-        if (selectedMovie != null) {
-            searchQuery = selectedMovie.Title
-            year = selectedMovie.Year
+    LaunchedEffect(isAdding) {
+        if (isAdding) {
+            selectedMovie?.let { movie ->
+                onAddMovieClick(movie)
+                viewModel.finishAdding()
+                onNavigateBack()
+            }
         }
     }
 
@@ -54,100 +60,152 @@ fun AddScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Поле для названия фильма
+            // Поле поиска
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = { searchQuery = it },
+                onValueChange = { viewModel.updateSearchQuery(it) },
                 label = { Text("Название фильма") },
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     IconButton(
                         onClick = {
                             if (searchQuery.isNotBlank()) {
-                                onSearchClick(searchQuery, year)
+                                // Вызываем поиск и переходим на экран результатов
+                                onSearchRequested(searchQuery, year)
                             }
                         }
                     ) {
                         Icon(Icons.Default.Search, contentDescription = "Поиск")
                     }
-                }
+                },
+                enabled = !isAdding
             )
 
-            // Поле для года (необязательное)
+            // Поле года
             OutlinedTextField(
                 value = year,
-                onValueChange = { year = it },
+                onValueChange = { viewModel.updateYear(it) },
                 label = { Text("Год (необязательно)") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isAdding
             )
 
-            // Показываем информацию о выбранном фильме с постером
-            selectedMovie?.let { movie ->
-                Card(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Постер из интернета (если есть)
-                        if (!movie.Poster.isNullOrEmpty() && movie.Poster != "N/A") {
-                            AsyncImage(
-                                model = movie.Poster,
-                                contentDescription = "Постер ${movie.Title}",
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .padding(end = 12.dp)
-                            )
-                        } else {
-                            // Заглушка если нет постера
-                            Box(
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .padding(end = 12.dp)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "🎬",
-                                    fontSize = 32.sp
-                                )
-                            }
-                        }
-
-                        // Информация о фильме
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = movie.Title,
-                                style = MaterialTheme.typography.titleLarge
-                            )
-                            Text(
-                                text = "📅 ${movie.Year}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = "🎭 ${movie.Type}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
+            // Показываем выбранный фильм (если есть)
+            if (searchState is AddSearchState.Idle) {
+                selectedMovie?.let { movie ->
+                    SelectedMovieCard(movie = movie)
                 }
             }
 
-            // Кнопка добавления фильма в БД
+            // Кнопка добавления
             Button(
-                onClick = {
-                    selectedMovie?.let { onAddMovieClick(it) }
-                },
+                onClick = { viewModel.startAdding() },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = selectedMovie != null
+                enabled = selectedMovie != null && !isAdding
             ) {
-                Text("Добавить фильм")
+                if (isAdding) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Добавить фильм")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SearchResultCard(
+    result: MovieSearchResult,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (!result.Poster.isNullOrEmpty() && result.Poster != "N/A") {
+                AsyncImage(
+                    model = result.Poster,
+                    contentDescription = "Постер ${result.Title}",
+                    modifier = Modifier.size(50.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("🎬", fontSize = 24.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = result.Title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "${result.Year} • ${result.Type}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SelectedMovieCard(movie: MovieSearchResult) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (!movie.Poster.isNullOrEmpty() && movie.Poster != "N/A") {
+                AsyncImage(
+                    model = movie.Poster,
+                    contentDescription = "Постер ${movie.Title}",
+                    modifier = Modifier.size(80.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("🎬", fontSize = 32.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = movie.Title,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Text(
+                    text = "📅 ${movie.Year}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "🎭 ${movie.Type}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
