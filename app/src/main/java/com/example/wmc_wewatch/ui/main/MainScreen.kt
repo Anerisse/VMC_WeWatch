@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.wmc_wewatch.data.Movie
+import com.example.wmc_wewatch.ui.main.mvi.MainIntent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,14 +27,18 @@ fun MainScreen(
     // События передаются во ViewModel
     onMovieSelected: (Int, Boolean) -> Unit,
     onDeleteSelected: () -> Unit,
-    onAddMovie: () -> Unit,
+    onIntent: (MainIntent) -> Unit,
     isLoading: Boolean,
 ) {
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddMovie) {
-                Icon(Icons.Default.Add, contentDescription = "Добавить фильм")
-            }
+
+                FloatingActionButton(
+                    onClick = { onIntent(MainIntent.NavigateToAdd) }  // ← Отправляем Intent
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Добавить фильм")
+                }
+
         },
         topBar = {
             TopAppBar(

@@ -4,10 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.wmc_wewatch.data.Movie
 import com.example.wmc_wewatch.data.MovieRepository
+import com.example.wmc_wewatch.ui.main.mvi.MainEffect
 import com.example.wmc_wewatch.ui.main.mvi.MainIntent
 import com.example.wmc_wewatch.ui.main.mvi.MainState
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -19,6 +23,10 @@ class MainViewModel(
     // ЕДИНСТВЕННОЕ состояние экрана
     private val _state = MutableStateFlow(MainState())
     val state: StateFlow<MainState> = _state.asStateFlow()
+
+    // Effect Flow для одноразовых событий
+    private val _effect = MutableSharedFlow<MainEffect>()
+    val effect: SharedFlow<MainEffect> = _effect.asSharedFlow()
 
     init {
         // При создании ViewModel сразу загружаем фильмы
@@ -34,7 +42,11 @@ class MainViewModel(
             is MainIntent.ToggleSelection -> toggleSelection(intent.id, intent.isSelected)
             is MainIntent.DeleteSelected -> deleteSelected()
             is MainIntent.ClearError -> clearError()
-            else -> {}
+            is MainIntent.NavigateToAdd -> {
+                viewModelScope.launch {
+                    _effect.emit(MainEffect.NavigateToAdd)
+                }
+            }
         }
     }
 
@@ -71,7 +83,7 @@ class MainViewModel(
         }
     }
 
-    // 🗑 УДАЛЕНИЕ ВЫБРАННЫХ
+    //  УДАЛЕНИЕ ВЫБРАННЫХ
     private fun deleteSelected() {
         val idsToDelete = _state.value.selectedIds.toList()
         if (idsToDelete.isEmpty()) return
@@ -93,6 +105,7 @@ class MainViewModel(
                         error = e.message
                     )
                 }
+                _effect.emit(MainEffect.ShowError(e.message ?: "Неизвестная ошибка"))
             }
         }
     }

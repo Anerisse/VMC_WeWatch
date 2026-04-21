@@ -7,4 +7,5 @@ sealed class MainIntent {
     data class ToggleSelection(val id: Int, val isSelected: Boolean): MainIntent()
     object DeleteSelected : MainIntent()
     object ClearError : MainIntent()
+    object NavigateToAdd : MainIntent()
 }

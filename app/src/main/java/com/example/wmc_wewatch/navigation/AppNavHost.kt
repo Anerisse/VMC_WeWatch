@@ -40,9 +40,7 @@ fun AppNavHost(
                 onDeleteSelected = {
                     onIntent(MainIntent.DeleteSelected)
                 },
-                onAddMovie = {
-                    navController.navigate("add")
-                }
+                onIntent = onIntent
             )
         }
 

@@ -1,6 +1,7 @@
 package com.example.wmc_wewatch
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
@@ -20,8 +21,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.wmc_wewatch.navigation.AppNavHost
 import com.example.wmc_wewatch.ui.main.MainViewModel
+import com.example.wmc_wewatch.ui.main.mvi.MainEffect
 import com.example.wmc_wewatch.viewmodel.ViewModelFactory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
@@ -58,7 +61,24 @@ class MainActivity : ComponentActivity() {
             val viewModel: MainViewModel = viewModel(factory = factory)
             val navController = rememberNavController()
 
-            val mainState by viewModel.state.collectAsState()  // ← Новое (единое состояние)
+            LaunchedEffect(Unit) {
+                viewModel.effect.collectLatest { effect ->
+                    when (effect) {
+                        is MainEffect.NavigateToAdd -> {
+                            navController.navigate("add")
+                        }
+                        is MainEffect.ShowError -> {
+                            // Показываем Toast
+                             Toast.makeText(this@MainActivity, effect.message, Toast.LENGTH_SHORT).show()
+                            println("❌ Ошибка: ${effect.message}")
+                        }
+                    }
+                }
+            }
+
+
+
+            val mainState by viewModel.state.collectAsState()  // ← единое состояние
 
             MaterialTheme(colorScheme = colorScheme) {
                 AppNavHost(
@@ -74,7 +94,7 @@ class MainActivity : ComponentActivity() {
 
                     // Добавление фильма
                     onAddMovie = { movie ->
-                        println("🎬 Добавление фильма: ${movie.Title}")
+                        println(" Добавление фильма: ${movie.Title}")
 
                         lifecycleScope.launch {
                             withContext(Dispatchers.IO) {

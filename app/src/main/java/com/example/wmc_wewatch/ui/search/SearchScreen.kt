@@ -10,11 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.wmc_wewatch.api.MovieSearchResult
-import androidx.compose.ui.unit.sp
-
+import com.example.wmc_wewatch.ui.search.mvi.SearchIntent
+import com.example.wmc_wewatch.ui.search.mvi.SearchState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,10 +26,18 @@ fun SearchScreen(
     onMovieSelected: (MovieSearchResult) -> Unit,
     viewModel: SearchViewModel = viewModel()
 ) {
-    val searchState by viewModel.searchState.collectAsState()
+    val state by viewModel.state.collectAsState()
 
+    // Запускаем поиск при первом появлении
     LaunchedEffect(query) {
-        viewModel.searchMovies(query)
+        viewModel.handleIntent(SearchIntent.Search(query))
+    }
+
+    // Очищаем при уходе
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.handleIntent(SearchIntent.Clear)
+        }
     }
 
     Scaffold(
@@ -43,10 +52,12 @@ fun SearchScreen(
             )
         }
     ) { paddingValues ->
-        when (val state = searchState) {
+        when (val searchState = state) {
             is SearchState.Loading -> {
                 Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
@@ -55,16 +66,20 @@ fun SearchScreen(
 
             is SearchState.Error -> {
                 Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("❌ ${state.message}")
+                    Text(" ${searchState.message}")
                 }
             }
 
             is SearchState.Empty -> {
                 Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Ничего не найдено")
@@ -73,11 +88,13 @@ fun SearchScreen(
 
             is SearchState.Success -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
                     contentPadding = PaddingValues(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(state.results) { result ->
+                    items(searchState.results) { result ->
                         SearchResultItem(
                             result = result,
                             onClick = { onMovieSelected(result) }
@@ -123,10 +140,7 @@ fun SearchResultItem(
                 }
             }
 
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = result.Title,
                     style = MaterialTheme.typography.titleMedium
