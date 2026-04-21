@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
                         is MainEffect.ShowError -> {
                             // Показываем Toast
                              Toast.makeText(this@MainActivity, effect.message, Toast.LENGTH_SHORT).show()
-                            println("❌ Ошибка: ${effect.message}")
+                            println(" Ошибка: ${effect.message}")
                         }
                     }
                 }

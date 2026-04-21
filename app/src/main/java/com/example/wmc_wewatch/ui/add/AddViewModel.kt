@@ -18,9 +18,8 @@ class AddViewModel : ViewModel() {
     private val _state = MutableStateFlow(AddState())
     val state: StateFlow<AddState> = _state.asStateFlow()
 
-    /**
-     * ЕДИНСТВЕННЫЙ метод для обработки ВСЕХ действий пользователя
-     */
+    // ЕДИНСТВЕННЫЙ метод для обработки ВСЕХ действий пользователя
+
     fun handleIntent(intent: AddIntent) {
         when (intent) {
             is AddIntent.UpdateSearchQuery -> updateSearchQuery(intent.query)

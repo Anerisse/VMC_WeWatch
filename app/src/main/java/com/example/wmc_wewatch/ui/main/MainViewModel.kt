@@ -33,9 +33,8 @@ class MainViewModel(
         handleIntent(MainIntent.LoadMovies)
     }
 
-    /**
-     * ЕДИНСТВЕННЫЙ метод для обработки ВСЕХ действий пользователя
-     */
+    // ЕДИНСТВЕННЫЙ метод для обработки ВСЕХ действий пользователя
+
     fun handleIntent(intent: MainIntent) {
         when (intent) {
             is MainIntent.LoadMovies -> loadMovies()
@@ -51,9 +50,8 @@ class MainViewModel(
     }
 
 
-    /**
-     * Загружает все фильмы из БД и подписывается на изменения
-     */
+    //  Загружает все фильмы из БД и подписывается на изменения
+
     private fun loadMovies() {
         viewModelScope.launch {
             // Показываем загрузку
