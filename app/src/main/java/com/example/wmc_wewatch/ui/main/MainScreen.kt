@@ -19,11 +19,11 @@ import com.example.wmc_wewatch.data.Movie
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
-    // Данные передаются из контроллера (Activity)
+    // Данные передаются из ViewModel
     movies: List<Movie>,
     selectedMovieIds: Set<Int>,
 
-    // События передаются в контроллер
+    // События передаются во ViewModel
     onMovieSelected: (Int, Boolean) -> Unit,
     onDeleteSelected: () -> Unit,
     onAddMovie: () -> Unit
