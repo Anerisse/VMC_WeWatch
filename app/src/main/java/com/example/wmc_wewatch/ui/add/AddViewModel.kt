@@ -4,142 +4,80 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.wmc_wewatch.api.MovieSearchResult
 import com.example.wmc_wewatch.api.RetrofitInstance
+import com.example.wmc_wewatch.ui.add.mvi.AddIntent
+import com.example.wmc_wewatch.ui.add.mvi.AddState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-// Состояние поиска для AddScreen
-sealed class AddSearchState {
-    object Idle : AddSearchState()
-    object Loading : AddSearchState()
-    data class Success(val results: List<MovieSearchResult>) : AddSearchState()
-    data class Error(val message: String) : AddSearchState()
-}
 
 class AddViewModel : ViewModel() {
 
-    // Состояние полей ввода
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-    private val _year = MutableStateFlow("")
-    val year: StateFlow<String> = _year.asStateFlow()
-
-    // Состояние поиска
-    private val _searchState = MutableStateFlow<AddSearchState>(AddSearchState.Idle)
-    val searchState: StateFlow<AddSearchState> = _searchState.asStateFlow()
-
-    // Выбранный фильм
-    private val _selectedMovie = MutableStateFlow<MovieSearchResult?>(null)
-    val selectedMovie: StateFlow<MovieSearchResult?> = _selectedMovie.asStateFlow()
-
-    // Состояние добавления в БД
-    private val _isAdding = MutableStateFlow(false)
-    val isAdding: StateFlow<Boolean> = _isAdding.asStateFlow()
+    // ЕДИНСТВЕННОЕ состояние экрана
+    private val _state = MutableStateFlow(AddState())
+    val state: StateFlow<AddState> = _state.asStateFlow()
 
     /**
-     * Обновляет поисковый запрос
+     * ЕДИНСТВЕННЫЙ метод для обработки ВСЕХ действий пользователя
      */
-    fun updateSearchQuery(query: String) {
-        _searchQuery.value = query
-        // Если поле очистили, сбрасываем состояние поиска
-        if (query.isBlank()) {
-            _searchState.value = AddSearchState.Idle
+    fun handleIntent(intent: AddIntent) {
+        when (intent) {
+            is AddIntent.UpdateSearchQuery -> updateSearchQuery(intent.query)
+            is AddIntent.UpdateYear -> updateYear(intent.year)
+            is AddIntent.SelectMovie -> selectMovie(intent.movie)
+            is AddIntent.StartAdding -> startAdding()
+            is AddIntent.FinishAdding -> finishAdding()
+            is AddIntent.Reset -> reset()
+            is AddIntent.ClearError -> clearError()
         }
     }
 
-    /**
-     * Обновляет год
-     */
-    fun updateYear(newYear: String) {
-        _year.value = newYear
+    //  ОБНОВЛЕНИЕ ПОИСКОВОГО ЗАПРОСА
+    private fun updateSearchQuery(query: String) {
+        _state.update { it.copy(searchQuery = query) }
     }
 
-    /**
-     * Выполняет поиск фильмов
-     */
-    fun performSearch() {
-        val query = _searchQuery.value
-        if (query.isBlank()) return
+    //  ОБНОВЛЕНИЕ ГОДА
+    private fun updateYear(year: String) {
+        _state.update { it.copy(year = year) }
+    }
 
-        _searchState.value = AddSearchState.Loading
-
-        viewModelScope.launch {
-            try {
-                println("🔍 Поиск: $query")
-                val response = RetrofitInstance.api.searchMovies(query)
-                println("📦 Ответ: $response")
-
-                when (response.Response) {
-                    "True" -> {
-                        val results = response.Search ?: emptyList()
-                        _searchState.value = if (results.isEmpty()) {
-                            AddSearchState.Error("Ничего не найдено")
-                        } else {
-                            AddSearchState.Success(results)
-                        }
-                        println("✅ Найдено: ${results.size} фильмов")
-                    }
-                    else -> {
-                        val errorMsg = response.Error ?: "Ничего не найдено"
-                        _searchState.value = AddSearchState.Error(errorMsg)
-                        println("❌ Ошибка API: $errorMsg")
-                    }
-                }
-            } catch (e: Exception) {
-                println("💥 Исключение: ${e.message}")
-                e.printStackTrace()
-                _searchState.value = AddSearchState.Error("Ошибка загрузки: ${e.message}")
-            }
+    //  ВЫБОР ФИЛЬМА
+    private fun selectMovie(movie: MovieSearchResult) {
+        _state.update {
+            it.copy(
+                selectedMovie = movie,
+                searchQuery = movie.Title,
+                year = movie.Year
+            )
         }
     }
 
-    /**
-     * Выбирает фильм из результатов поиска
-     */
-    fun selectMovie(movie: MovieSearchResult) {
-        _selectedMovie.value = movie
-        // Заполняем поля из выбранного фильма
-        _searchQuery.value = movie.Title
-        _year.value = movie.Year
-        // Сбрасываем состояние поиска
-        _searchState.value = AddSearchState.Idle
+    //  НАЧАЛО ДОБАВЛЕНИЯ
+    private fun startAdding() {
+        _state.update { it.copy(isAdding = true) }
     }
 
-    /**
-     * Очищает выбранный фильм
-     */
-    fun clearSelectedMovie() {
-        _selectedMovie.value = null
+    //  ЗАВЕРШЕНИЕ ДОБАВЛЕНИЯ
+    private fun finishAdding() {
+        _state.update {
+            it.copy(
+                isAdding = false,
+                selectedMovie = null,
+                searchQuery = "",
+                year = ""
+            )
+        }
     }
 
-    /**
-     * Начинает процесс добавления в БД
-     */
-    fun startAdding() {
-        _isAdding.value = true
+    //  СБРОС ВСЕГО
+    private fun reset() {
+        _state.update { AddState() }
     }
 
-    /**
-     * Завершает процесс добавления
-     */
-    fun finishAdding() {
-        _isAdding.value = false
-        _selectedMovie.value = null
-        _searchQuery.value = ""
-        _year.value = ""
-        _searchState.value = AddSearchState.Idle
-    }
-
-    /**
-     * Сбрасывает всё состояние
-     */
-    fun reset() {
-        _searchQuery.value = ""
-        _year.value = ""
-        _searchState.value = AddSearchState.Idle
-        _selectedMovie.value = null
-        _isAdding.value = false
+    //  ОЧИСТКА ОШИБКИ
+    private fun clearError() {
+        _state.update { it.copy(error = null) }
     }
 }
