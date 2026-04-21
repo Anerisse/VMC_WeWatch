@@ -55,8 +55,8 @@ fun MainScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
-
+                    .padding(paddingValues)
+                .navigationBarsPadding(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -82,8 +82,9 @@ fun MainScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(8.dp),
+                    .padding(top = paddingValues.calculateTopPadding())  // отступ сверху
+                    .navigationBarsPadding(),  // отступ снизу
+                contentPadding = PaddingValues(bottom = 80.dp, top = 8.dp, start= 8.dp, end= 8.dp),  //  чтобы последний элемент не скрывался за FAB
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(movies) { movie ->
