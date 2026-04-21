@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.wmc_wewatch.api.MovieSearchResult
+import com.example.wmc_wewatch.ui.add.mvi.AddIntent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,17 +25,14 @@ fun AddScreen(
     onSearchRequested: (String, String) -> Unit,
     viewModel: AddViewModel = viewModel()
 ) {
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val year by viewModel.year.collectAsState()
-    val searchState by viewModel.searchState.collectAsState()
-    val selectedMovie by viewModel.selectedMovie.collectAsState()
-    val isAdding by viewModel.isAdding.collectAsState()
+    val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(isAdding) {
-        if (isAdding) {
-            selectedMovie?.let { movie ->
+    // Когда isAdding становится true — добавляем фильм
+    LaunchedEffect(state.isAdding) {
+        if (state.isAdding) {
+            state.selectedMovie?.let { movie ->
                 onAddMovieClick(movie)
-                viewModel.finishAdding()
+                viewModel.handleIntent(AddIntent.FinishAdding)
                 onNavigateBack()
             }
         }
@@ -45,7 +43,10 @@ fun AddScreen(
             TopAppBar(
                 title = { Text("Добавить фильм") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = {
+                        viewModel.handleIntent(AddIntent.Reset)
+                        onNavigateBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
                 }
@@ -60,45 +61,53 @@ fun AddScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Поле для названия фильма
             OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.updateSearchQuery(it) },
+                value = state.searchQuery,
+                onValueChange = {
+                    viewModel.handleIntent(AddIntent.UpdateSearchQuery(it))
+                },
                 label = { Text("Название фильма") },
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     IconButton(
                         onClick = {
-                            if (searchQuery.isNotBlank()) {
-                                onSearchRequested(searchQuery, year)
+                            if (state.searchQuery.isNotBlank()) {
+                                onSearchRequested(state.searchQuery, state.year)
                             }
                         }
                     ) {
                         Icon(Icons.Default.Search, contentDescription = "Поиск")
                     }
                 },
-                enabled = !isAdding
+                enabled = !state.isAdding
             )
 
+            // Поле для года
             OutlinedTextField(
-                value = year,
-                onValueChange = { viewModel.updateYear(it) },
+                value = state.year,
+                onValueChange = {
+                    viewModel.handleIntent(AddIntent.UpdateYear(it))
+                },
                 label = { Text("Год (необязательно)") },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !isAdding
+                enabled = !state.isAdding
             )
 
-            if (searchState is AddSearchState.Idle) {
-                selectedMovie?.let { movie ->
-                    SelectedMovieCard(movie = movie)
-                }
+            // Показываем выбранный фильм
+            state.selectedMovie?.let { movie ->
+                SelectedMovieCard(movie = movie)
             }
 
+            // Кнопка добавления
             Button(
-                onClick = { viewModel.startAdding() },
+                onClick = {
+                    viewModel.handleIntent(AddIntent.StartAdding)
+                },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = selectedMovie != null && !isAdding
+                enabled = state.selectedMovie != null && !state.isAdding
             ) {
-                if (isAdding) {
+                if (state.isAdding) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         color = MaterialTheme.colorScheme.onPrimary
@@ -106,54 +115,6 @@ fun AddScreen(
                 } else {
                     Text("Добавить фильм")
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun SearchResultCard(
-    result: MovieSearchResult,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (!result.Poster.isNullOrEmpty() && result.Poster != "N/A") {
-                AsyncImage(
-                    model = result.Poster,
-                    contentDescription = "Постер ${result.Title}",
-                    modifier = Modifier.size(50.dp)
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(50.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("🎬", fontSize = 24.sp)
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = result.Title,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = "${result.Year} • ${result.Type}",
-                    style = MaterialTheme.typography.bodySmall
-                )
             }
         }
     }

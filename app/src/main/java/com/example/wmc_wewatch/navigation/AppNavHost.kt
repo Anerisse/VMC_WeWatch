@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 import com.example.wmc_wewatch.api.MovieSearchResult
 import com.example.wmc_wewatch.ui.add.AddScreen
 import com.example.wmc_wewatch.ui.add.AddViewModel
+import com.example.wmc_wewatch.ui.add.mvi.AddIntent
 import com.example.wmc_wewatch.ui.main.MainScreen
 import com.example.wmc_wewatch.ui.main.mvi.MainIntent
 import com.example.wmc_wewatch.ui.main.mvi.MainState
@@ -55,7 +56,7 @@ fun AppNavHost(
                 savedStateHandle?.getLiveData<MovieSearchResult>("selected_movie")
                     ?.observeForever { movie ->
                         if (movie != null) {
-                            addViewModel.selectMovie(movie)
+                            addViewModel.handleIntent(AddIntent.SelectMovie(movie))
                             savedStateHandle.remove<MovieSearchResult>("selected_movie")
                         }
                     }
@@ -63,7 +64,7 @@ fun AppNavHost(
 
             AddScreen(
                 onNavigateBack = {
-                    addViewModel.reset()
+                    addViewModel.handleIntent(AddIntent.Reset)
                     navController.popBackStack()
                 },
                 onAddMovieClick = { movie ->
